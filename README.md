@@ -1,4 +1,4 @@
-<h1 style="font-size: 4em;">Swift<i>Timer</i> ⏲️</h1>
+<h1 style="font-size: 4em;">⏲️ Swift<i>Timer</i></h1>
 
 https://user-images.githubusercontent.com/11669302/133908593-2065154c-6c2d-4c82-bc98-8921a18f55b0.mov
 
