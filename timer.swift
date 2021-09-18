@@ -28,7 +28,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationDidFinishLaunching(_: Notification) {
     window.setFrameAutosaveName("Main Window")
-    window.contentView = NSHostingView(rootView: ApplicationView())
+    window.contentView = NSHostingView(rootView: 
+      ApplicationView()
+      .preferredColorScheme(.dark)
+    )
 
     window.makeKeyAndOrderFront(nil)
     window.title = title
@@ -60,7 +63,18 @@ app.delegate = delegate
 
 app.run()
 
+extension ColorScheme {
+  var foregroundColor: Color {
+    if case .light = self {
+      return .black
+    } else {
+      return .white
+    }
+  }
+}
+
 struct ApplicationView: SwiftUI.View {
+  @Environment(\.colorScheme) var colorScheme
   @State private var isCountingDown: Bool = false
   @State private var showResetButton: Bool = false
   @State private var showStartButton: Bool = false
@@ -83,25 +97,27 @@ struct ApplicationView: SwiftUI.View {
   var body: some View {
     if isCountingDown {
       displayClock()
-        .onReceive(timer!, perform: { _ in
-          if clock[S] > 0 {
-            clock[S] -= 1
-          } else {
-            clock[S] = 59
-            if clock[M] > 0 {
-              clock[M] -= 1
-            } else {
-              clock[M] = 59
-              if clock[H] > 0 {
-                clock[H] -= 1
-              } else {
-                stopTimer()
-              }
-            }
-          }
-        })
+        .onReceive(timer!, perform: updateClock)
     } else {
       displayClock()
+    }
+  }
+
+  func updateClock(_: Date) {
+    if clock[S] > 0 {
+      clock[S] -= 1
+    } else {
+      clock[S] = 59
+      if clock[M] > 0 {
+        clock[M] -= 1
+      } else {
+        clock[M] = 59
+        if clock[H] > 0 {
+          clock[H] -= 1
+        } else {
+          stopTimer()
+        }
+      }
     }
   }
 
@@ -110,23 +126,23 @@ struct ApplicationView: SwiftUI.View {
       VStack {
         if isCountingDown {
           Text(prettyClock)
-            .font(.system(size: 50))
+            .font(.system(size: 80, weight: .ultraLight))
         } else {
-          makeSelectButtons()
+          makeClockPicker()
         }
       }
-      VStack {
-        Spacer()
-        HStack {
+      if showStartButton {
+        VStack {
           Spacer()
-          if showStartButton {
+          HStack {
+            Spacer()
             makeStartButton()
+            Spacer()
           }
-          Spacer()
         }
       }
     }
-    .frame(width: 300, height: 150)
+    .frame(width: 324, height: 156)
     .padding(.bottom, 20)
   }
 
@@ -136,6 +152,14 @@ struct ApplicationView: SwiftUI.View {
     showStartButton = false
     showResetButton = false
     clock = [0, 0, 0]
+    clockSelection = ["", "", ""]
+  }
+
+  func startTimer() {
+    isCountingDown = true
+    timer = Timer
+      .publish(every: 1, on: .main, in: .common)
+      .autoconnect()
   }
 
   func makeStartButton() -> some View {
@@ -143,10 +167,7 @@ struct ApplicationView: SwiftUI.View {
       if isCountingDown {
         stopTimer()
       } else {
-        isCountingDown = true
-        timer = Timer
-          .publish(every: 1, on: .main, in: .common)
-          .autoconnect()
+        startTimer()
       }
     }, label: {
       if isCountingDown {
@@ -163,75 +184,82 @@ struct ApplicationView: SwiftUI.View {
     showStartButton = !(clock[H] == 0 && clock[M] == 0 && clock[S] == 0)
   }
 
-  @State private var timesUp = Date()
+  func makeTextfield(
+    text: Binding<String>,
+    placeholder: String,
+    validate: @escaping (Binding<String>) -> Void
+  ) -> some View {
+    return ZStack {
+      Text(placeholder)
+        .font(.system(size: 44, weight: .light))
+        .foregroundColor(colorScheme.foregroundColor.opacity(text.wrappedValue.isEmpty ? 0.5 : 0))
 
-  func makeSelectButtons() -> some View {
-    return HStack {
-      VStack {
-        Button(action: {
-          clock[H] = clock[H] < 23 ? clock[H] + 1 : clock[H]
-          shouldShowStartButton()
-        }, label: {
-          Image(systemName: "plus")
-        })
-        .frame(width: 20, height: 20)
-        .cornerRadius(10)
-        .clipped()
-        Text(clock[H].description)
-        Button(action: {
-          clock[H] = clock[H] > 0 ? clock[H] - 1 : clock[H]
-          shouldShowStartButton()
-        }, label: {
-          Image(systemName: "minus")
-        })
-        .frame(width: 20, height: 20)
-        .cornerRadius(10)
-        .clipped()
-      }
-      Text(":")
-      VStack {
-        Button(action: {
-          clock[M] = clock[M] < 59 ? clock[M] + 1 : clock[M]
-          shouldShowStartButton()
-        }, label: {
-          Image(systemName: "plus")
-        })
-        .frame(width: 20, height: 20)
-        .cornerRadius(10)
-        .clipped()
-        Text(clock[M].description)
-        Button(action: {
-          clock[M] = clock[M] > 0 ? clock[M] - 1 : clock[M]
-          shouldShowStartButton()
-        }, label: {
-          Image(systemName: "minus")
-        })
-        .frame(width: 20, height: 20)
-        .cornerRadius(10)
-        .clipped()
-      }
-      Text(":")
-      VStack {
-        Button(action: {
-          clock[S] = clock[S] < 59 ? clock[S] + 1 : clock[S]
-          shouldShowStartButton()
-        }, label: {
-          Image(systemName: "plus")
-        })
-        .frame(width: 20, height: 20)
-        .cornerRadius(10)
-        .clipped()
-        Text(clock[S].description)
-        Button(action: {
-          clock[S] = clock[S] > 0 ? clock[S] - 1 : clock[S]
-          shouldShowStartButton()
-        }, label: {
-          Image(systemName: "minus")
-        })
-        .frame(width: 20, height: 20)
-        .cornerRadius(10)
-        .clipped()
+      TextField("", text: text)
+        .font(.system(size: 44, weight: .light))
+        .onChange(of: text, perform: validate)
+        .background(Color.clear)
+        .frame(width: 60)
+    }
+  }
+    
+  @State var clockSelection: Array<String> = ["", "", ""]
+
+  enum ClockUnit: Int {
+    case
+      hour,
+      minute,
+      second
+    
+    var maxValue: Int {
+      switch self {
+      case .second, .minute:
+        return 59
+      case .hour:
+        return 23
       }
     }
+
+    var minValue: Int {
+      return 0
+    }
+  }
+  
+  func makeClockUnitPicker(for unit: ClockUnit) -> some View {
+    return makeTextfield(text: $clockSelection[unit.rawValue], placeholder: "00", validate: { _ in
+      if let val = Int(clockSelection[unit.rawValue]) {
+        if val < unit.minValue {
+          clockSelection[unit.rawValue] = "\(unit.minValue)"
+          clock[unit.rawValue] = unit.minValue
+        } else if val > unit.maxValue {
+          clockSelection[unit.rawValue] = "\(unit.maxValue)"
+          clock[unit.rawValue] = unit.maxValue
+        } else {
+          clockSelection[unit.rawValue] = String(val)
+          clock[unit.rawValue] = val
+        }
+      } else {
+        clockSelection[unit.rawValue] = ""
+        clock[unit.rawValue] = 0
+      }
+      shouldShowStartButton()
+    })
+  }
+  
+  func makeClockPicker() -> some View {
+    return HStack {
+      makeClockUnitPicker(for: .hour)
+      Text(":")
+        .font(.system(size: 50, weight: .light))
+      makeClockUnitPicker(for: .minute)
+      Text(":")
+        .font(.system(size: 50, weight: .light))
+      makeClockUnitPicker(for: .second)
+    }
+  }
+}
+
+extension Binding: Equatable where Value == String {
+  public static func ==(lhs: Self, rhs: Self) -> Bool {
+    return lhs.wrappedValue == rhs.wrappedValue
   }
 }
