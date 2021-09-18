@@ -3,8 +3,64 @@
 import Foundation
 import SwiftUI
 import Combine
+import Cocoa
 
-struct Application: SwiftUI.App {
+let app = NSApplication.shared
+let title = "github.com/alja7dali/swift-timer"
+
+let origin = CGPoint(x: 1, y: 1)
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+
+  let window = NSWindow(
+    contentRect: NSRect(
+      origin: origin,
+      size: CGSize(
+        width: 1,
+        height: .zero
+      )
+    ),
+    styleMask: [.titled, .closable, .fullScreen],
+    backing: .buffered,
+    defer: false,
+    screen: .main
+  )
+
+  func applicationDidFinishLaunching(_: Notification) {
+    window.setFrameAutosaveName("Main Window")
+    window.contentView = NSHostingView(rootView: ApplicationView())
+
+    window.makeKeyAndOrderFront(nil)
+    window.title = title
+
+    NSApp.setActivationPolicy(.regular)
+    NSApp.activate(ignoringOtherApps: true)
+  }
+
+  func applicationDockMenu(_: NSApplication) -> Optional<NSMenu> {
+    return .init(title: title)
+  }
+
+  func applicationDidResignActive(_: Notification) {
+    // always on front
+    window.level = .floating
+  }
+
+  func applicationWillTerminate(_ aNotification: Notification) {
+    // Insert code here to tear down your application
+  }
+
+  func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+    return true
+  }
+}
+
+let delegate: Optional<AppDelegate> = AppDelegate()
+app.delegate = delegate
+
+app.run()
+
+struct ApplicationView: SwiftUI.View {
   @State private var isCountingDown: Bool = false
   @State private var showResetButton: Bool = false
   @State private var showStartButton: Bool = false
@@ -24,32 +80,29 @@ struct Application: SwiftUI.App {
     return "\(h):\(m):\(s)"
   }
 
-  var body: some Scene {
-    WindowGroup {
-      if isCountingDown {
-        displayClock()
-          .onReceive(timer!, perform: { _ in
-            if clock[S] > 0 {
-              clock[S] -= 1
+  var body: some View {
+    if isCountingDown {
+      displayClock()
+        .onReceive(timer!, perform: { _ in
+          if clock[S] > 0 {
+            clock[S] -= 1
+          } else {
+            clock[S] = 59
+            if clock[M] > 0 {
+              clock[M] -= 1
             } else {
-              clock[S] = 59
-              if clock[M] > 0 {
-                clock[M] -= 1
+              clock[M] = 59
+              if clock[H] > 0 {
+                clock[H] -= 1
               } else {
-                clock[M] = 59
-                if clock[H] > 0 {
-                  clock[H] -= 1
-                } else {
-                  stopTimer()
-                }
+                stopTimer()
               }
             }
-          })
-      } else {
-        displayClock()
-      }
+          }
+        })
+    } else {
+      displayClock()
     }
-    .windowStyle(HiddenTitleBarWindowStyle())
   }
 
   func displayClock() -> some View {
@@ -109,6 +162,8 @@ struct Application: SwiftUI.App {
   func shouldShowStartButton() {
     showStartButton = !(clock[H] == 0 && clock[M] == 0 && clock[S] == 0)
   }
+
+  @State private var timesUp = Date()
 
   func makeSelectButtons() -> some View {
     return HStack {
@@ -180,5 +235,3 @@ struct Application: SwiftUI.App {
     }
   }
 }
-
-Application.main()
