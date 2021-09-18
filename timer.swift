@@ -8,7 +8,7 @@ import Cocoa
 let app = NSApplication.shared
 let title = "github.com/alja7dali/swift-timer"
 
-let zoomFactor: CGFloat = {
+let scaleFactor: CGFloat = {
   let factor = CGFloat(
     CommandLine.arguments.count > 1 ?
       Int(CommandLine.arguments[1]) ?? 1 : 1
@@ -54,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationDidResignActive(_: Notification) {
     // always on front
-    if zoomFactor < 3 {
+    if scaleFactor < 3 {
       window.level = .floating
     }
   }
@@ -136,7 +136,7 @@ struct ApplicationView: SwiftUI.View {
       VStack {
         if isCountingDown {
           Text(prettyClock)
-            .font(.system(size: 80 * zoomFactor, weight: .ultraLight))
+            .font(.system(size: 80 * scaleFactor, weight: .ultraLight))
         } else {
           makeClockPicker()
         }
@@ -152,7 +152,7 @@ struct ApplicationView: SwiftUI.View {
         }
       }
     }
-    .frame(width: 324 * zoomFactor, height: 156 * zoomFactor)
+    .frame(width: 324 * scaleFactor, height: 156 * scaleFactor)
     .padding(.bottom, 20)
   }
 
@@ -201,14 +201,14 @@ struct ApplicationView: SwiftUI.View {
   ) -> some View {
     return ZStack {
       Text(placeholder)
-        .font(.system(size: 44 * zoomFactor, weight: .light))
+        .font(.system(size: 44 * scaleFactor, weight: .light))
         .foregroundColor(colorScheme.foregroundColor.opacity(text.wrappedValue.isEmpty ? 0.5 : 0))
 
       TextField("", text: text)
-        .font(.system(size: 44 * zoomFactor, weight: .light))
+        .font(.system(size: 44 * scaleFactor, weight: .light))
         .onChange(of: text, perform: validate)
         .background(Color.clear)
-        .frame(width: 60 * zoomFactor)
+        .frame(width: 60 * scaleFactor)
     }
   }
     
@@ -259,10 +259,10 @@ struct ApplicationView: SwiftUI.View {
     return HStack {
       makeClockUnitPicker(for: .hour)
       Text(":")
-        .font(.system(size: 50 * zoomFactor, weight: .light))
+        .font(.system(size: 50 * scaleFactor, weight: .light))
       makeClockUnitPicker(for: .minute)
       Text(":")
-        .font(.system(size: 50 * zoomFactor, weight: .light))
+        .font(.system(size: 50 * scaleFactor, weight: .light))
       makeClockUnitPicker(for: .second)
     }
   }
