@@ -7,5 +7,5 @@ https://user-images.githubusercontent.com/11669302/133908593-2065154c-6c2d-4c82-
 ```shell
 chmod +x timer.swift
 ```
-2. to run it type `./timer.swift`
+2. then type `./timer.swift`
 3. to close it type `ctrl` + `c`, or by pressing the close button 🔴
