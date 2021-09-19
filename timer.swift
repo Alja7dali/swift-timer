@@ -7,7 +7,7 @@ import Cocoa
 
 let app = NSApplication.shared
 let title = "github.com/alja7dali/swift-timer"
-
+let player = NSSound(named: "Ping")
 let scaleFactor: CGFloat = {
   let factor = CGFloat(
     CommandLine.arguments.count > 1 ?
@@ -125,6 +125,12 @@ struct ApplicationView: SwiftUI.View {
         if clock[H] > 0 {
           clock[H] -= 1
         } else {
+            player?.loops = true
+            let timeLimit = 4.0// get it from settings
+            player?.play()
+            Timer.scheduledTimer(withTimeInterval: timeLimit, repeats: false) { (timer) in
+                player?.stop()
+            }
           stopTimer()
         }
       }
