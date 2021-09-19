@@ -189,7 +189,7 @@ struct ApplicationView: SwiftUI.View {
         if isCountingDown {
           if shouldStartFlashing {
             Text(prettyClock)
-              .foregroundColor(clock[S] % 2 == 0 ? .white : .white.opacity(0.5))
+              .foregroundColor(clock[S] % 2 == 0 ? .white : .red.opacity(0.5))
               .font(.system(size: 80 * scaleFactor, weight: .ultraLight))
           } else {
             Text(prettyClock)
