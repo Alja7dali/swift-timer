@@ -7,7 +7,33 @@ import Cocoa
 
 let app = NSApplication.shared
 let title = "github.com/alja7dali/swift-timer"
-let player = NSSound(named: "Ping")
+
+enum Sound: String, CaseIterable {
+  case
+    basso,
+    blow,
+    bottle,
+    frog,
+    funk,
+    glass,
+    hero,
+    morse,
+    ping,
+    pop,
+    purr,
+    sosumi,
+    submarine,
+    tink
+
+  var name: String {
+    return "\(rawValue.first!.uppercased())\(rawValue.dropFirst().map(String.init).joined())"
+  }
+
+  var soundPlayer: Optional<NSSound> {
+    return .init(named: name)
+  }
+}
+
 let scaleFactor: CGFloat = {
   let factor = CGFloat(
     CommandLine.arguments.count > 1 ?
@@ -89,9 +115,35 @@ struct ApplicationView: SwiftUI.View {
   @State private var showResetButton: Bool = false
   @State private var showStartButton: Bool = false
 
+  @State private var playSoundEffectWhenDoneCountingdown: Bool = true
+  @State private var soundEffect: Sound = .ping
+  var player: Optional<NSSound> {
+    return soundEffect.soundPlayer
+  }
+
+  @State var didStartPlayingSoundEffect: Bool = false
+  var shouldPlaySoundEffect: Bool {
+    return !didStartPlayingSoundEffect && playSoundEffectWhenDoneCountingdown
+  }
+
+  var shouldStartFlashing: Bool {
+    return clock[H] == 0 && clock[M] == 0 && clock[S] <= 5
+  }
+
   @State var timer: Publishers.Autoconnect<Timer.TimerPublisher>!
 
-  @State var clock: Array<Int> = [0, 0, 0]
+  @State var clock: Array<Int> = [0, 0, 0] {
+    didSet {
+      if shouldStartFlashing && shouldPlaySoundEffect {
+        didStartPlayingSoundEffect = true
+        player?.loops = true
+        player?.play()
+        Timer.scheduledTimer(withTimeInterval: Double(clock[S]), repeats: false) { (timer) in
+          player?.stop()
+        }
+      } 
+    }
+  }
 
   let H: Int = 0 // HOURS
   let M: Int = 1 // MINUTES
@@ -125,12 +177,6 @@ struct ApplicationView: SwiftUI.View {
         if clock[H] > 0 {
           clock[H] -= 1
         } else {
-            player?.loops = true
-            let timeLimit = 4.0// get it from settings
-            player?.play()
-            Timer.scheduledTimer(withTimeInterval: timeLimit, repeats: false) { (timer) in
-                player?.stop()
-            }
           stopTimer()
         }
       }
@@ -138,25 +184,23 @@ struct ApplicationView: SwiftUI.View {
   }
 
   func displayClock() -> some View {
-    ZStack {
+    return ZStack {
       VStack {
         if isCountingDown {
-          Text(prettyClock)
-            .font(.system(size: 80 * scaleFactor, weight: .ultraLight))
+          if shouldStartFlashing {
+            Text(prettyClock)
+              .foregroundColor(clock[S] % 2 == 0 ? .white : .white.opacity(0.5))
+              .font(.system(size: 80 * scaleFactor, weight: .ultraLight))
+          } else {
+            Text(prettyClock)
+              .font(.system(size: 80 * scaleFactor, weight: .ultraLight))
+          }
         } else {
           makeClockPicker()
         }
       }
-      if showStartButton {
-        VStack {
-          Spacer()
-          HStack {
-            Spacer()
-            makeStartButton()
-            Spacer()
-          }
-        }
-      }
+      makeStartButton()
+      makeSoundEffectSelection()
     }
     .frame(width: 324 * scaleFactor, height: 156 * scaleFactor)
     .padding(.bottom, 20)
@@ -169,6 +213,7 @@ struct ApplicationView: SwiftUI.View {
     showResetButton = false
     clock = [0, 0, 0]
     clockSelection = ["", "", ""]
+    didStartPlayingSoundEffect = false
   }
 
   func startTimer() {
@@ -179,21 +224,69 @@ struct ApplicationView: SwiftUI.View {
   }
 
   func makeStartButton() -> some View {
-    Button(action: {
-      if isCountingDown {
-        stopTimer()
-      } else {
-        startTimer()
+    VStack {
+      if showStartButton {
+        Spacer()
+        HStack {
+          Spacer()
+          Button(action: {
+            if isCountingDown {
+              stopTimer()
+            } else {
+              startTimer()
+            }
+          }, label: {
+            if isCountingDown {
+              Text("Reset")
+            } else {
+              Text("Start")
+            }
+          })
+          .cornerRadius(20)
+          .clipped()
+          Spacer()
+        }
       }
-    }, label: {
-      if isCountingDown {
-        Text("Reset")
-      } else {
-        Text("Start")
+    }
+  }
+
+  func makeSoundEffectSelection() -> some View {
+    let sounds = Sound.allCases
+    return VStack {
+      HStack {
+        if !isCountingDown {
+          Button(action: {
+            playSoundEffectWhenDoneCountingdown.toggle()
+          }, label: {
+            Image(systemName: playSoundEffectWhenDoneCountingdown ? "speaker.wave.3.fill" : "speaker.slash.fill")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 16, height: 16)
+              .foregroundColor(.white)
+          })
+          if playSoundEffectWhenDoneCountingdown {
+            Picker("Sound", selection: $soundEffect, content: {
+              ForEach(0..<sounds.count) { i in
+                Text(sounds[i].rawValue).tag(sounds[i])
+                  .foregroundColor(.white)
+              }
+            })
+            .pickerStyle(MenuPickerStyle())
+          }
+        } else {
+          Image(systemName: playSoundEffectWhenDoneCountingdown ? "speaker.wave.3.fill" : "speaker.slash.fill")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 16, height: 16)
+            .foregroundColor(.white)
+          Text(soundEffect.name)
+            .foregroundColor(.white)
+        }
+        Spacer()
       }
-    })
-    .cornerRadius(20)
-    .clipped()
+      .padding()
+      Spacer()
+    }
   }
 
   func shouldShowStartButton() {
