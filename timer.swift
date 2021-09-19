@@ -132,18 +132,7 @@ struct ApplicationView: SwiftUI.View {
 
   @State var timer: Publishers.Autoconnect<Timer.TimerPublisher>!
 
-  @State var clock: Array<Int> = [0, 0, 0] {
-    didSet {
-      if shouldStartFlashing && shouldPlaySoundEffect {
-        didStartPlayingSoundEffect = true
-        player?.loops = true
-        player?.play()
-        Timer.scheduledTimer(withTimeInterval: Double(clock[S]), repeats: false) { (timer) in
-          player?.stop()
-        }
-      } 
-    }
-  }
+  @State var clock: Array<Int> = [0, 0, 0]
 
   let H: Int = 0 // HOURS
   let M: Int = 1 // MINUTES
@@ -170,6 +159,12 @@ struct ApplicationView: SwiftUI.View {
   }
 
   func updateClock(_: Date) {
+    if shouldStartFlashing && shouldPlaySoundEffect {
+      didStartPlayingSoundEffect = true
+      player?.loops = true
+      player?.play()
+    } 
+
     if clock[S] > 0 {
       clock[S] -= 1
     } else {
@@ -218,6 +213,7 @@ struct ApplicationView: SwiftUI.View {
     clock = [0, 0, 0]
     clockSelection = ["", "", ""]
     didStartPlayingSoundEffect = false
+    player?.stop()
   }
 
   func startTimer() {
