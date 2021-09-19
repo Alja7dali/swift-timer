@@ -123,7 +123,7 @@ struct ApplicationView: SwiftUI.View {
 
   @State var didStartPlayingSoundEffect: Bool = false
   var shouldPlaySoundEffect: Bool {
-    return !didStartPlayingSoundEffect && playSoundEffectWhenDoneCountingdown
+    return isCountingDown && !didStartPlayingSoundEffect && playSoundEffectWhenDoneCountingdown
   }
 
   var shouldStartFlashing: Bool {
