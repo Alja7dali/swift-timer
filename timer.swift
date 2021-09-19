@@ -153,7 +153,11 @@ struct ApplicationView: SwiftUI.View {
     let h: String = clock[H] < 10 ? "0\(clock[H])" : "\(clock[H])"
     let m: String = clock[M] < 10 ? "0\(clock[M])" : "\(clock[M])"
     let s: String = clock[S] < 10 ? "0\(clock[S])" : "\(clock[S])"
-    return "\(h):\(m):\(s)"
+    if h == "00" {
+      return "\(m):\(s)"
+    } else {
+      return "\(h):\(m):\(s)"
+    }
   }
 
   var body: some View {
